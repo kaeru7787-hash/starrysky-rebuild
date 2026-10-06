@@ -62,4 +62,3 @@ npm test
 
 [MIT License](./LICENSE)
 
-

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#030711" />
+    <meta
+      name="description"
+      content="端末の方位と現在地に合わせて星・星座・惑星を探索できる、完全スタンドアロンの星空シミュレーター。"
+    />
+    <meta property="og:title" content="今日の星空 — Starry Sky Atlas" />
+    <meta
+      property="og:description"
+      content="星空を向いて探す。時間を進めて、これからの空を見る。"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="./og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>今日の星空 — Starry Sky Atlas</title>
+  </head>
+  <body>
+    <main id="app" class="app-shell" data-display-mode="smart">
+      <canvas id="sky" aria-label="現在の星空。ドラッグして方位を変更できます"></canvas>
+      <div class="sky-vignette" aria-hidden="true"></div>
+
+      <header class="topbar">
+        <div class="brand" aria-label="今日の星空">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <span>
+            <strong>今日の星空</strong>
+            <small>STARRY SKY ATLAS</small>
+          </span>
+        </div>
+
+        <div class="view-switch" role="group" aria-label="表示モード">
+          <button class="chip is-active" id="smartMode" type="button">スマホ</button>
+          <button class="chip" id="pcMode" type="button">PC</button>
+          <button class="chip chip-accent" id="gyroMode" type="button" aria-pressed="false">
+            <span aria-hidden="true">⌖</span> ジャイロ
+          </button>
+        </div>
+
+        <button class="location-trigger" id="locationTrigger" type="button">
+          <span aria-hidden="true">◎</span>
+          <span class="location-copy">
+            <small>観測地点</small>
+            <strong id="locationSummary">北緯35.0° 東経135.0°</strong>
+          </span>
+        </button>
+      </header>
+
+      <section class="orientation-readout" aria-live="polite">
+        <span class="eyebrow">VIEW DIRECTION</span>
+        <strong id="directionValue">南 180°</strong>
+        <span id="altitudeValue">高度 25°</span>
+      </section>
+
+      <section class="time-dock" aria-label="時間シミュレーション">
+        <div class="clock-block">
+          <span class="eyebrow" id="clockModeLabel">REAL TIME</span>
+          <strong id="simDate">読み込み中…</strong>
+          <span id="simTimezone">観測地点の時刻</span>
+        </div>
+        <div class="timeline" aria-hidden="true">
+          <span class="timeline-orbit"></span>
+          <span class="timeline-now" id="timelineMarker"></span>
+        </div>
+        <div class="playback-controls">
+          <button class="icon-button" id="playPause" type="button" aria-label="シミュレーションを一時停止">
+            <span id="playIcon">Ⅱ</span>
+          </button>
+          <label class="speed-field" for="speedInput">
+            <span>速度</span>
+            <span class="speed-input-wrap">
+              <input id="speedInput" type="number" min="0" max="1000000" step="any" value="1" inputmode="decimal" />
+              <b>×</b>
+            </span>
+          </label>
+          <div class="speed-presets" role="group" aria-label="速度プリセット">
+            <button type="button" data-speed="1" class="is-active">1×</button>
+            <button type="button" data-speed="60">60×</button>
+            <button type="button" data-speed="3600">1h/s</button>
+            <button type="button" data-speed="86400">1d/s</button>
+          </div>
+          <button class="now-button" id="resetNow" type="button">現在へ戻す</button>
+        </div>
+      </section>
+
+      <aside class="object-panel" id="objectPanel" aria-live="polite" aria-hidden="true">
+        <button class="panel-close" id="objectClose" type="button" aria-label="詳細を閉じる">×</button>
+        <span class="object-kind" id="objectKind">STAR</span>
+        <div class="object-heading">
+          <span class="object-symbol" id="objectSymbol">✦</span>
+          <div>
+            <h2 id="objectName">シリウス</h2>
+            <p id="objectDesignation">おおいぬ座 α星</p>
+          </div>
+        </div>
+        <dl class="object-grid" id="objectData"></dl>
+        <p class="object-note" id="objectNote"></p>
+      </aside>
+
+      <dialog class="location-dialog" id="locationDialog">
+        <form method="dialog" id="locationForm">
+          <div class="dialog-head">
+            <div>
+              <span class="eyebrow">OBSERVATION POINT</span>
+              <h2>観測地点を設定</h2>
+            </div>
+            <button class="panel-close" value="cancel" aria-label="閉じる">×</button>
+          </div>
+          <p>現在地を取得するか、緯度と経度を直接入力してください。</p>
+          <div class="coordinate-grid">
+            <label>
+              <span>緯度 Latitude</span>
+              <input id="latitudeInput" type="number" min="-90" max="90" step="0.000001" required />
+            </label>
+            <label>
+              <span>経度 Longitude</span>
+              <input id="longitudeInput" type="number" min="-180" max="180" step="0.000001" required />
+            </label>
+          </div>
+          <div class="dialog-actions">
+            <button type="button" class="secondary-action" id="useGps">現在地を取得</button>
+            <button type="submit" class="primary-action" value="apply">この位置を使う</button>
+          </div>
+          <output id="locationStatus" class="dialog-status" aria-live="polite"></output>
+        </form>
+      </dialog>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      <div class="sensor-note" id="sensorNote" hidden></div>
+      <p class="canvas-hint" id="canvasHint">ドラッグで空を見回す · 天体名をタップして詳細</p>
+    </main>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
